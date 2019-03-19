@@ -1,0 +1,269 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+        <meta name="keywords" content="关键词">
+        <meta name="description" content="描述">
+        <meta name="author" content="LY">
+        <style>
+            body{font-family: "Microsoft YaHei",serif;}
+            body,dl,dd,p,h1,h2,h3,h4,h5,h6{margin:0;}
+            ol,ul,li{margin:0;padding:0;list-style:none;}
+            img{border:none;}
+            #wrap{
+                width:100%;
+                height:100%;
+                overflow: hidden;
+                background-color: blueviolet;
+            }
+            .box{
+                width:100%;
+                height:100%;
+                border-radius: 50px;
+                background-color: rgba(0,0,0,0.5);
+            }
+            .box .top{
+                width:100%;
+                height:11%;
+                border-radius: 50px 0 0 0;
+                background-color: rgba(0,0,0,0.5);
+                text-indent: 50px;
+                color:#fff;
+                font-size: 28px;
+                line-height: 80px;
+                font-family:Comic Sans MS,Arial,Microsoft YaHei ;
+            }
+            .box .top span{
+                font-size: 18px;
+                float: right;
+                margin-right: 100px;
+            }
+            .box .mesg{
+                width:100%;
+                height:80%;
+                background-color: rgba(0,0,0,0.4);
+                overflow-y: auto;
+
+            }
+            .box .mesg p.hint{
+                color: #fff;
+                font-size: 16px;
+                margin:auto;
+                text-align:center;
+                line-height: 30px;
+                color:#999999;
+            }
+            .box .mesg p.note{
+                height: 50px;
+                line-height: 50px;
+                text-indent: 10px;
+            }
+            .box .mesg .mymsg{
+                height: 50px;
+                line-height: 50px;
+                text-indent: 10px;
+            }
+            .box .mesg .mymsg>span.name{
+                float:right;
+                margin-right:50px;
+                color:#fff;
+            }
+            .box .mesg .mymsg>span.mesg{
+                float:right;
+                position: relative;
+                top:21px;
+                margin-right: 10px;
+                width:auto;
+                height:auto;
+                display:inline-block !important;
+                color:#fff;
+                text-align: center;
+                text-indent: 0;
+                padding:0 5px;
+                line-height: 40px;
+            }
+            .box .mesg p.note>span.name{
+                color:#e74c3c;
+                font-size: 16px;
+            }
+            .box .mesg p.note>span.mesg{
+                position: relative;
+                width:auto;
+                height:auto;
+                display:inline-block !important;
+                display:inline;
+                padding: 3px;
+                background-color: rgba(0,0,0,0.4);
+                color:#fff;
+                font-size: 16px;
+                word-break: break-all;
+                top:30px;
+                margin:0 0 0 20px;
+                line-height: 40px;
+                text-align: center;
+                text-indent: 0;
+                padding:0 5px;
+            }
+            .box .mesg p.note>span.mesg:before{
+                content: "";
+                position: absolute;
+                top:0;
+                left:-16px;
+                width: 0;
+                height:0;
+                border: 8px solid transparent;
+                border-right:8px solid rgba(0,0,0,0.4) ;
+            }
+            .box .send{
+                width:100%;
+                height:10%;
+                border-radius: 0 0 0 50px;
+                background-color: rgba(0,0,0,0.5);
+                line-height: 80px;
+                text-indent: 400px;
+            }
+            .box .send input[type=text]{
+                width:40%;
+                height:40%;
+                border-radius: 5px;
+                border:none;
+                background-color: #2F4056;
+                text-indent: 10px;
+                font-size: 14px;
+                color: #fff;
+            }
+            .box .send button{
+                width:160px;
+                height:42%;
+                border-radius: 5px;
+                background-color: #e74c88;
+                border: none;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="wrap">
+            <div class="box">
+                <div class="top">Welcome To The Great Ly's Chat Room
+                    <span></span>
+                </div>
+                <div class="mesg">
+
+                </div>
+                <div class="send">
+                    <input type="text" class="text">
+                    <button onclick="submit()">发送</button>
+                </div>
+
+            </div>
+        </div>
+        <script src="/js/socket.io.js"></script>
+        <script>
+            window.onload = () => {
+                document.getElementsByTagName("body")[0].style.height = document.documentElement.clientHeight+"px";
+                document.getElementsByTagName("body")[0].style.width  = document.documentElement.scrollWidth+"px";
+            }
+            const socket = io.connect('/');
+            let name;
+
+            //解析地址
+            function url() {
+                let url = decodeURI(window.location.href);
+                //console.log(url);
+                let a = /\?/;
+                if( url.match(a) ){
+                    let param = url.split("?")[1];
+                    name = param.split("=")[1];
+                    console.log(name);
+                    return name;
+                }else{
+                    return undefined;
+                }
+
+            }
+            //console.log(url());
+
+            //显示谁进入了聊天室
+            function init(){
+                if( !url() ){
+                    location.href = "login.html";
+                }else {
+                    socket.emit("enter", {name: url()});
+                    socket.on("enter", (data) => {
+                        //console.log(data);
+                        let con = document.querySelector(".mesg");
+                        let num = document.querySelector(".box .top span");
+                        con.innerHTML += `<p class="hint">${data.content}</p>`;
+                        num.innerHTML = `当前在线人数：${data.unum}`;
+                    })
+                }
+            }
+
+            init();
+
+            //退出
+            socket.on("out",(data)=>{
+                let con = document.querySelector(".mesg");
+                let num = document.querySelector(".box .top span");
+                con.innerHTML += `<p class="hint">${data.content}</p>`;
+                num.innerHTML = `当前在线人数：${data.unum}`;
+            })
+
+            function submit() {
+                let txt = document.querySelector(".text").value;
+                if( !txt||txt==="" )return;
+                socket.emit("mesg",{data:txt,name:url()});
+                document.querySelector(".text").value="";
+            }
+
+            //回车键发送
+            //注册键盘enter事件触发send函数
+            onkeydown = function () {
+                onkeyup = function (event) {
+                    if( event.keyCode===13 ){
+                        submit();
+                    }
+                }
+            }
+
+            //接受消息
+            socket.on("mesg",(data)=>{
+                console.log(data.name === name);
+                if( data.name === name ){
+                    let con = document.querySelector(".mesg");
+                    con.innerHTML += `<p class="mymsg">
+                        <span class="name">${data.name}</span>
+                        <span class="mesg">${data.content}</span>
+                    </p>`
+                }else{
+                    let con = document.querySelector(".mesg");
+                    con.innerHTML += `<p class="note">
+                        <span class="name">${data.name}</span>
+                        <span class="mesg">${data.content}</span>
+                    </p>`
+                }
+
+                //滚动条
+                var showContent = document.querySelector(".mesg");
+                showContent.scrollTop = showContent.scrollHeight;
+            })
+
+        </script>
+    </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
